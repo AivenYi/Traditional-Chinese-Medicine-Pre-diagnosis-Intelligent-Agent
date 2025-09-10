@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中医预诊智能辅助工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="api_config.js"></script>
+    <script src="medical_prompts.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1c1c1e;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        /* 主容器 */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        
+        /* 应用内容样式 */
+        .container {
+            padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #1c1c1e;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: #34c759;
+            text-shadow: 0 2px 4px rgba(52, 199, 89, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .chat-container {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 400px;
+            max-height: 500px;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            line-height: 1.5;
+            font-size: 15px;
+            word-wrap: break-word;
+            animation: messageSlide 0.3s ease-out;
+        }
+        
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .bot-message {
+            background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #007aff 0%, #0056cc 100%);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+        
+        .input-area {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        
+        input, textarea {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #f0f0f0;
+            border-radius: 20px;
+            font-size: 15px;
+            outline: none;
+            background-color: #fafafa;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus {
+            border-color: #007aff;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+        
+        textarea {
+            min-height: 44px;
+            max-height: 120px;
+            resize: none;
+            line-height: 1.4;
+        }
+        
+        .send-btn, .upload-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, #007aff 0%, #0056cc 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+        
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #34c759 0%, #28a745 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+        }
+        
+        .send-btn i, .upload-btn i {
+            font-size: 16px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #007aff 0%, #0056cc 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 16px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            background: white;
+            color: #007aff;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 16px 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            border-color: #007aff;
+            background: #f0f8ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+        }
+        
+        .action-btn i {
+            font-size: 16px;
+        }
+        
+        .diagnosis-result {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .diagnosis-title {
+            color: #007aff;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+        
+        .diagnosis-title i {
+            font-size: 20px;
+        }
+        
+        .diagnosis-result p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .diagnosis-result ul {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+        
+        .diagnosis-result li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            color: #555;
+        }
+        
+        .bottom-section {
+            background-color: #f8f9fa;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .info-text {
+            font-size: 13px;
+            color: #8e8e93;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .upload-preview {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            object-fit: cover;
+            border: 2px solid #007aff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+        
+        /* 图片放大功能 */
+        .image-zoom-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .image-zoom-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .image-zoom-container {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-zoom-img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: zoom-out;
+        }
+        
+        .image-zoom-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+        
+        .image-zoom-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 聊天中的图片样式 */
+        .chat-image {
+            max-width: 200px;
+            border-radius: 12px;
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .chat-image:hover {
+            transform: scale(1.02);
+        }
+        
+        /* 医学诊断分析结果区域 */
+        .medical-analysis-result {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .medical-analysis-title {
+            color: #dc3545;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+        }
+        
+        .medical-analysis-title i {
+            font-size: 22px;
+        }
+        
+        .medical-analysis-content {
+            line-height: 1.8;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        .medical-analysis-content h2 {
+            color: #dc3545;
+            font-size: 18px;
+            margin: 20px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .medical-analysis-content h3 {
+            color: #495057;
+            font-size: 16px;
+            margin: 16px 0 8px 0;
+        }
+        
+        .medical-analysis-content ul {
+            margin: 12px 0;
+            padding-left: 25px;
+        }
+        
+        .medical-analysis-content li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        .medical-analysis-content strong {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .analysis-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .analysis-loading i {
+            font-size: 24px;
+            color: #dc3545;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .app-container {
+                border-radius: 15px;
+                min-height: calc(100vh - 20px);
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .chat-container {
+                min-height: 300px;
+                max-height: 400px;
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .subtitle {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+            <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-leaf"></i>中医预诊智能助手
+            </div>
+            <div class="subtitle">融合传统智慧与现代AI技术的预诊参考工具</div>
+        </header>
+        
+        <div class="main-content">
+            <div class="chat-container" id="chatContainer">
+                <div class="message bot-message">
+                    您好！我是中医预诊智能助手，基于《本草纲目》《黄帝内经》等中医经典训练而成。请描述您的症状，我会为您提供初步的健康建议。
+                </div>
+            </div>
+            
+            <div class="diagnosis-result" id="diagnosisResult" style="display: none;">
+                <div class="diagnosis-title">
+                    <i class="fas fa-stethoscope"></i> 预诊分析结果
+                </div>
+                <div id="diagnosisContent">
+                    <!-- API返回的内容将在这里显示 -->
+                </div>
+            </div>
+            
+            <div class="medical-analysis-result" id="medicalAnalysisResult">
+                <div class="medical-analysis-title">
+                    <i class="fas fa-user-md"></i> 医学诊断分析
+                </div>
+                <div class="medical-analysis-content" id="medicalAnalysisContent">
+                    <!-- 医学分析内容将在这里显示 -->
+                </div>
+            </div>
+            
+            <div class="bottom-section">
+                <div class="input-area">
+                    <div class="input-row">
+                        <textarea id="symptomInput" placeholder="请详细描述您的症状..."></textarea>
+                        <button id="symptomSendButton" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+                        <button class="upload-btn" onclick="document.getElementById('imageUpload').click()">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                        <img id="previewImage" class="upload-preview" style="display: none;">
+                        <button id="sendImageButton" class="send-btn" style="display: none;">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn"><i class="fas fa-diagnoses"></i> 获取预诊分析</button>
+                    <button class="action-btn"><i class="fas fa-history"></i> 清空对话</button>
+                    <button class="action-btn" id="knowledgeBaseBtn"><i class="fas fa-book-medical"></i> 中医知识库</button>
+                    <button class="action-btn" id="testApiButton"><i class="fas fa-bug"></i> 测试API</button>
+                </div>
+                
+                <div class="info-text">
+                    免责声明：本工具提供预诊参考，不替代专业医疗诊断。如有紧急情况，请立即就医。
+                </div>
+            </div>
+            </div>
+        </div>
+    
+    <!-- 图片放大覆盖层 -->
+    <div class="image-zoom-overlay" id="imageZoomOverlay">
+        <div class="image-zoom-container">
+            <button class="image-zoom-close" id="imageZoomClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <img class="image-zoom-img" id="imageZoomImg" src="" alt="放大图片">
+        </div>
+    </div>
+
+    <script>
+        // 从配置文件获取API配置
+        const cozeConfig = getApiConfig('COZE');
+        const imageAnalysisConfig = getApiConfig('IMAGE_ANALYSIS');
+        
+        // 直接调用Coze API的函数
+        async function callCozeAPI(input) {
+            try {
+                console.log('开始调用Coze API，输入:', input);
+                
+                const response = await fetch(cozeConfig.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${cozeConfig.API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        workflow_id: cozeConfig.WORKFLOW_ID,
+                        parameters: {
+                            user_id: '12345',
+                            user_name: '所有医学领域咨询{多模态}',
+                            input: input
+                        }
+                    })
+                });
+                
+                console.log('API响应状态:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('API返回数据:', data);
+                
+                return data;
+            } catch (error) {
+                console.error('调用Coze API失败:', error);
+                throw error;
+            }
+        }
+        
+        // 调用图片分析API的函数
+        async function callImageAnalysisAPI(imageUrl) {
+            try {
+                console.log('开始调用图片分析API，图片URL:', imageUrl);
+                console.log('API配置:', imageAnalysisConfig);
+                
+                const requestBody = {
+                    "model": imageAnalysisConfig.MODEL,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": imageUrl
+                                    }
+                                },
+                                {
+                                    "type": "text",
+                                    "text": getMedicalPrompt('comprehensive')
+                                }
+                            ]
+                        }
+                    ],
+                    "stream": false
+                };
+                
+                console.log('请求体:', JSON.stringify(requestBody, null, 2));
+                
+                const response = await fetch(imageAnalysisConfig.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${imageAnalysisConfig.API_KEY}`,
+                        'X-API-Key': imageAnalysisConfig.API_KEY
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('图片分析API响应状态:', response.status);
+                console.log('响应头:', response.headers);
+                
+                if (!response.ok) {
+                    // 尝试获取错误详情
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.text();
+                        console.log('错误响应内容:', errorData);
+                        errorMessage += ` - ${errorData}`;
+                    } catch (e) {
+                        console.log('无法读取错误响应内容');
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const data = await response.json();
+                console.log('图片分析API返回数据:', data);
+                
+                return data;
+            } catch (error) {
+                console.error('调用图片分析API失败:', error);
+                throw error;
+            }
+        }
+        
+        // 获取最后一条包含图片的机器人消息
+        function getLastBotMessageWithImage() {
+            const chatContainer = document.getElementById('chatContainer');
+            const botMessages = chatContainer.querySelectorAll('.bot-message');
+            console.log('找到的机器人消息数量:', botMessages.length);
+            
+            for (let i = botMessages.length - 1; i >= 0; i--) {
+                const message = botMessages[i];
+                const img = message.querySelector('img');
+                console.log(`检查消息 ${i}:`, message.textContent.substring(0, 50) + '...', '包含图片:', !!img);
+                if (img && img.src) {
+                    console.log('找到图片URL:', img.src);
+                    return img.src;
+                }
+            }
+            console.log('没有找到包含图片的机器人消息');
+            return null;
+        }
+        
+        // 执行医学分析
+        async function performMedicalAnalysis(imageUrl) {
+            // 检查API密钥是否已配置
+            if (!checkApiKey('IMAGE_ANALYSIS')) {
+                const medicalAnalysisResult = document.getElementById('medicalAnalysisResult');
+                const medicalAnalysisContent = document.getElementById('medicalAnalysisContent');
+                
+                medicalAnalysisResult.style.display = 'block';
+                medicalAnalysisContent.innerHTML = `
+                    <div style="text-align: center; color: #ffc107; padding: 20px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <h3 style="color: #856404; margin-bottom: 10px;">API密钥未配置</h3>
+                        <p style="color: #856404; margin-bottom: 15px;">请先在 api_config.js 文件中配置您的图片分析API密钥</p>
+                        <div style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #495057;">
+                            IMAGE_ANALYSIS: {<br>
+                            &nbsp;&nbsp;API_KEY: 'your-api-key-here'<br>
+                            }
+                        </div>
+                    </div>
+                `;
+                medicalAnalysisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+            
+            const medicalAnalysisResult = document.getElementById('medicalAnalysisResult');
+            const medicalAnalysisContent = document.getElementById('medicalAnalysisContent');
+            
+            // 显示分析区域和加载状态
+            medicalAnalysisResult.style.display = 'block';
+            medicalAnalysisContent.innerHTML = `
+                <div class="analysis-loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>正在分析图片，请稍候...</p>
+                </div>
+            `;
+            
+            // 滚动到分析区域
+            medicalAnalysisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            try {
+                console.log('开始执行医学分析，图片URL:', imageUrl);
+                
+                const analysisResult = await callImageAnalysisAPI(imageUrl);
+                
+                console.log('医学分析结果:', analysisResult);
+                
+                // 处理分析结果
+                if (analysisResult && analysisResult.choices && analysisResult.choices[0]) {
+                    const content = analysisResult.choices[0].message.content;
+                    medicalAnalysisContent.innerHTML = formatMedicalAnalysis(content);
+                } else {
+                    medicalAnalysisContent.innerHTML = `
+                        <div style="text-align: center; color: #dc3545; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>分析失败，请稍后重试</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('医学分析详细错误:', error);
+                medicalAnalysisContent.innerHTML = `
+                    <div style="text-align: center; color: #dc3545; padding: 20px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>分析过程中发生错误: ${error.message}</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">请检查网络连接或稍后重试</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 格式化医学分析内容
+        function formatMedicalAnalysis(content) {
+            // 将Markdown格式转换为HTML
+            let formattedContent = content
+                .replace(/## (.*?)/g, '<h2>$1</h2>')
+                .replace(/### (.*?)/g, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // 处理列表
+            formattedContent = formattedContent.replace(/- (.*?)(<br>|$)/g, '<li>$1</li>');
+            formattedContent = formattedContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            
+            return `<p>${formattedContent}</p>`;
+        }
+        
+        // 图片上传预览功能
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('previewImage');
+                    const uploadBtn = document.querySelector('.upload-btn');
+                    const sendBtn = document.getElementById('symptomSendButton');
+                    const sendImageBtn = document.getElementById('sendImageButton');
+                    
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    // 隐藏上传按钮，显示预览图片和发送图片按钮
+                    uploadBtn.style.display = 'none';
+                    sendBtn.style.display = 'none';
+                    sendImageBtn.style.display = 'flex';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 发送图片按钮功能
+        document.getElementById('sendImageButton').addEventListener('click', async function() {
+            const preview = document.getElementById('previewImage');
+            if (preview.style.display !== 'none') {
+                console.log('发送图片按钮被点击');
+                
+                // 添加用户消息
+                addMessage("[图片]我上传了一张图片，请分析", 'user');
+                
+                // 显示加载状态
+                const loadingMessage = addMessage('正在分析您的图片...', 'bot');
+                
+                try {
+                    console.log('开始调用Coze API分析图片...');
+                    
+                    // 使用新的API调用方式
+                    const res = await callCozeAPI("分析这张图片：" + preview.src.substring(0, 100) + "...");
+                    
+                    console.log('API响应:', res);
+                    
+                    // 移除加载消息
+                    removeMessage(loadingMessage);
+                    
+                    // 处理响应
+                    if (res && res.data) {
+                        try {
+                            // 尝试解析data字段，它可能是一个JSON字符串
+                            let parsedData;
+                            if (typeof res.data === 'string') {
+                                parsedData = JSON.parse(res.data);
+                            } else {
+                                parsedData = res.data;
+                            }
+                            
+                            console.log('解析后的数据:', parsedData);
+                            
+                            if (parsedData && parsedData.output1) {
+                                // 如果解析后有output1字段（图片链接）
+                                console.log('API返回图片链接:', parsedData.output1);
+                                addMessage(parsedData.output1, 'bot');
+                            } else if (parsedData && parsedData.output) {
+                                // 兼容output字段
+                                console.log('API返回图片链接:', parsedData.output);
+                                addMessage(parsedData.output, 'bot');
+                            } else if (parsedData && parsedData.result) {
+                                console.log('API返回结果:', parsedData.result);
+                                addMessage(parsedData.result, 'bot');
+                            } else {
+                                console.log('API返回内容:', parsedData);
+                                addMessage(JSON.stringify(parsedData), 'bot');
+                            }
+                        } catch (parseError) {
+                            console.error('解析API响应数据失败:', parseError);
+                            // 如果解析失败，直接显示原始数据
+                            addMessage(res.data.toString(), 'bot');
+                        }
+                    } else if (res && res.output) {
+                        // 直接检查output字段
+                        console.log('API返回图片链接:', res.output);
+                        addMessage(res.output, 'bot');
+                    } else if (res && res.result) {
+                        // 如果返回的是result字段
+                        console.log('API返回结果:', res.result);
+                        addMessage(res.result, 'bot');
+                    } else {
+                        console.log('API响应为空');
+                        addMessage('抱歉，无法获取分析结果，请稍后再试。', 'bot');
+                    }
+                } catch (error) {
+                    console.error('API调用详细错误:', error);
+                    console.error('错误堆栈:', error.stack);
+                    
+                    // 移除加载消息
+                    removeMessage(loadingMessage);
+                    
+                    addMessage(`抱歉，发生了错误: ${error.message || '未知错误'}`, 'bot');
+                }
+                
+                // 重置界面状态
+                preview.style.display = 'none';
+                document.getElementById('sendImageButton').style.display = 'none';
+                document.querySelector('.upload-btn').style.display = 'flex';
+                document.getElementById('symptomSendButton').style.display = 'flex';
+                
+                // 滚动到底部
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
+        
+        // 症状输入框发送按钮功能
+        document.getElementById('symptomSendButton').addEventListener('click', async function() {
+            const symptomInput = document.getElementById('symptomInput');
+            const message = symptomInput.value.trim();
+            
+            if (!message) {
+                alert('请输入您的症状描述');
+                return;
+            }
+            
+            console.log('症状发送按钮被点击，消息:', message);
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            
+            // 清空输入
+            symptomInput.value = '';
+            
+            // 显示加载状态
+            const loadingMessage = addMessage('正在分析您的症状...', 'bot');
+            
+            try {
+                console.log('开始调用Coze API分析症状...');
+                
+                // 使用新的API调用方式
+                const res = await callCozeAPI(message);
+                
+                console.log('症状分析API响应:', res);
+                
+                // 移除加载消息
+                removeMessage(loadingMessage);
+                
+                                    // 处理响应
+                    if (res && res.data) {
+                        try {
+                            // 尝试解析data字段，它可能是一个JSON字符串
+                            let parsedData;
+                            if (typeof res.data === 'string') {
+                                parsedData = JSON.parse(res.data);
+                            } else {
+                                parsedData = res.data;
+                            }
+                            
+                            console.log('解析后的数据:', parsedData);
+                            
+                            if (parsedData && parsedData.output1) {
+                                // 如果解析后有output1字段（图片链接）
+                                console.log('症状分析返回图片链接:', parsedData.output1);
+                                addMessage(parsedData.output1, 'bot');
+                                showDiagnosisResult(parsedData.output1);
+                            } else if (parsedData && parsedData.output) {
+                                // 兼容output字段
+                                console.log('症状分析返回图片链接:', parsedData.output);
+                                addMessage(parsedData.output, 'bot');
+                                showDiagnosisResult(parsedData.output);
+                            } else if (parsedData && parsedData.result) {
+                                console.log('症状分析返回结果:', parsedData.result);
+                                addMessage(parsedData.result, 'bot');
+                                showDiagnosisResult(parsedData.result);
+                            } else {
+                                console.log('症状分析返回内容:', parsedData);
+                                addMessage(JSON.stringify(parsedData), 'bot');
+                                showDiagnosisResult(JSON.stringify(parsedData));
+                            }
+                        } catch (parseError) {
+                            console.error('解析API响应数据失败:', parseError);
+                            // 如果解析失败，直接显示原始数据
+                            addMessage(res.data.toString(), 'bot');
+                        }
+                    } else if (res && res.output) {
+                        // 直接检查output字段
+                        console.log('症状分析返回图片链接:', res.output);
+                        addMessage(res.output, 'bot');
+                        showDiagnosisResult(res.output);
+                    } else if (res && res.result) {
+                        // 如果返回的是result字段
+                        console.log('症状分析返回结果:', res.result);
+                        addMessage(res.result, 'bot');
+                        showDiagnosisResult(res.result);
+                    } else {
+                        console.log('症状分析API响应为空');
+                        addMessage('抱歉，无法获取分析结果，请稍后再试。', 'bot');
+                    }
+            } catch (error) {
+                console.error('症状分析API调用详细错误:', error);
+                console.error('错误堆栈:', error.stack);
+                
+                // 移除加载消息
+                removeMessage(loadingMessage);
+                
+                addMessage(`抱歉，发生了错误: ${error.message || '未知错误'}`, 'bot');
+            }
+            
+            // 滚动到底部
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+        
+        
+        // 添加消息到聊天窗口
+        function addMessage(text, sender) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            
+            // 检查是否包含图片链接
+            if (sender === 'bot' && text.includes('https://') && (text.includes('.png') || text.includes('.jpg') || text.includes('.jpeg') || text.includes('.gif'))) {
+                // 如果是图片链接，直接显示图片
+                const img = document.createElement('img');
+                img.src = text;
+                img.classList.add('chat-image');
+                img.alt = 'AI生成的图片';
+                img.title = '点击放大图片';
+                
+                // 添加点击放大功能
+                img.addEventListener('click', function() {
+                    showImageZoom(text);
+                });
+                
+                messageDiv.textContent = 'AI为您生成了以下图片：';
+                messageDiv.appendChild(img);
+            } else {
+                // 普通文本消息
+                messageDiv.textContent = text;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return messageDiv; // 返回消息元素，以便后续可以移除
+        }
+        
+        // 显示图片放大功能
+        function showImageZoom(imageSrc) {
+            const overlay = document.getElementById('imageZoomOverlay');
+            const img = document.getElementById('imageZoomImg');
+            const closeBtn = document.getElementById('imageZoomClose');
+            
+            img.src = imageSrc;
+            overlay.classList.add('show');
+            
+            // 点击关闭按钮关闭
+            closeBtn.addEventListener('click', hideImageZoom);
+            
+            // 点击图片或背景关闭
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay || e.target === img) {
+                    hideImageZoom();
+                }
+            });
+            
+            // ESC键关闭
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideImageZoom();
+                }
+            });
+        }
+        
+        // 隐藏图片放大功能
+        function hideImageZoom() {
+            const overlay = document.getElementById('imageZoomOverlay');
+            overlay.classList.remove('show');
+        }
+        
+        // 显示诊断结果
+        function showDiagnosisResult(content) {
+            const diagnosisResult = document.getElementById('diagnosisResult');
+            const diagnosisContent = document.getElementById('diagnosisContent');
+            
+            // 检查是否是图片链接
+            if (content.includes('https://') && (content.includes('.png') || content.includes('.jpg') || content.includes('.jpeg') || content.includes('.gif'))) {
+                // 如果是图片，显示图片
+                diagnosisContent.innerHTML = `
+                    <div style="text-align: center; margin: 20px 0;">
+                        <img src="${content}" class="chat-image" style="max-width: 100%; cursor: zoom-in;" 
+                             onclick="showImageZoom('${content}')" alt="诊断结果图片" title="点击放大图片">
+                        <p style="margin-top: 10px; color: #666; font-size: 14px;">点击图片可放大查看</p>
+                    </div>
+                `;
+            } else {
+                // 如果是文本，显示文本内容
+                diagnosisContent.innerHTML = `
+                    <div style="line-height: 1.6; color: #333;">
+                        ${content.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            }
+            
+            // 显示诊断结果区域
+            diagnosisResult.style.display = 'block';
+            
+            // 滚动到诊断结果区域
+            setTimeout(() => {
+                diagnosisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+        
+        // 移除消息
+        function removeMessage(messageElement) {
+            if (messageElement && messageElement.parentNode) {
+                messageElement.parentNode.removeChild(messageElement);
+            }
+        }
+        
+        
+        // 为症状输入框添加回车键发送功能
+        document.getElementById('symptomInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // 防止换行
+                document.getElementById('symptomSendButton').click();
+            }
+        });
+        
+        // 获取预诊分析按钮功能
+        document.querySelector('.action-buttons .action-btn:first-child').addEventListener('click', async function() {
+            console.log('获取预诊分析按钮被点击');
+            const symptomInput = document.getElementById('symptomInput');
+            console.log('症状输入框内容:', symptomInput.value.trim());
+            
+            if (symptomInput.value.trim()) {
+                console.log('有症状输入，调用症状发送按钮');
+                document.getElementById('symptomSendButton').click();
+            } else {
+                console.log('无症状输入，检查是否有图片可以分析');
+                // 检查是否有图片可以分析
+                const lastBotMessage = getLastBotMessageWithImage();
+                console.log('找到的图片消息:', lastBotMessage);
+                
+                if (lastBotMessage) {
+                    console.log('开始执行医学分析');
+                    await performMedicalAnalysis(lastBotMessage);
+                } else {
+                    console.log('没有找到图片，显示提示');
+                    alert('请先输入症状描述或等待AI生成图片后再进行分析');
+                }
+            }
+        });
+        
+        // 清空对话按钮功能
+        document.querySelector('.action-buttons .action-btn:nth-child(2)').addEventListener('click', function() {
+            const chatContainer = document.getElementById('chatContainer');
+            const diagnosisResult = document.getElementById('diagnosisResult');
+            const medicalAnalysisResult = document.getElementById('medicalAnalysisResult');
+            
+            // 保留第一条欢迎消息
+            const welcomeMessage = chatContainer.querySelector('.message');
+            chatContainer.innerHTML = '';
+            chatContainer.appendChild(welcomeMessage);
+            
+            // 隐藏诊断结果和医学分析结果
+            diagnosisResult.style.display = 'none';
+            medicalAnalysisResult.style.display = 'none';
+        });
+        
+        // 中医知识库按钮功能
+        document.getElementById('knowledgeBaseBtn').addEventListener('click', function() {
+            console.log('中医知识库按钮被点击');
+            // 跳转到知识库页面
+            window.open('knowledge_base.html', '_blank');
+        });
+        
+        // 测试API按钮功能
+        document.getElementById('testApiButton').addEventListener('click', async function() {
+            console.log('测试API按钮被点击');
+            
+            try {
+                console.log('开始测试API连接...');
+                addMessage('正在测试API连接...', 'bot');
+                
+                // 使用新的API调用方式
+                const res = await callCozeAPI("测试消息：你好，这是一条测试消息");
+                
+                console.log('测试API响应:', res);
+                
+                if (res && res.data) {
+                    try {
+                        // 尝试解析data字段，它可能是一个JSON字符串
+                        let parsedData;
+                        if (typeof res.data === 'string') {
+                            parsedData = JSON.parse(res.data);
+                        } else {
+                            parsedData = res.data;
+                        }
+                        
+                        console.log('解析后的数据:', parsedData);
+                        
+                        if (parsedData && parsedData.output1) {
+                            // 如果解析后有output1字段（图片链接）
+                            console.log('测试成功，返回图片链接:', parsedData.output1);
+                            addMessage('✅ API测试成功！AI为您生成了以下图片：', 'bot');
+                            addMessage(parsedData.output1, 'bot');
+                        } else if (parsedData && parsedData.output) {
+                            // 兼容output字段
+                            console.log('测试成功，返回图片链接:', parsedData.output);
+                            addMessage('✅ API测试成功！AI为您生成了以下图片：', 'bot');
+                            addMessage(parsedData.output, 'bot');
+                        } else if (parsedData && parsedData.result) {
+                            console.log('测试成功，返回结果:', parsedData.result);
+                            addMessage(`✅ API测试成功！返回结果：${parsedData.result}`, 'bot');
+                        } else {
+                            console.log('测试成功，返回内容:', parsedData);
+                            addMessage(`✅ API测试成功！返回内容：${JSON.stringify(parsedData)}`, 'bot');
+                        }
+                    } catch (parseError) {
+                        console.error('解析API响应数据失败:', parseError);
+                        // 如果解析失败，直接显示原始数据
+                        addMessage(`✅ API测试成功！返回内容：${res.data.toString()}`, 'bot');
+                    }
+                } else if (res && res.output) {
+                    // 直接检查output字段
+                    console.log('测试成功，返回图片链接:', res.output);
+                    addMessage('✅ API测试成功！AI为您生成了以下图片：', 'bot');
+                    addMessage(res.output, 'bot');
+                } else if (res && res.result) {
+                    console.log('测试成功，返回结果:', res.result);
+                    addMessage(`✅ API测试成功！返回结果：${res.result}`, 'bot');
+                } else {
+                    console.log('测试失败，响应为空');
+                    addMessage('❌ API测试失败：响应为空', 'bot');
+                }
+            } catch (error) {
+                console.error('API测试详细错误:', error);
+                addMessage(`❌ API测试失败：${error.message}`, 'bot');
+            }
+        });
+    </script>
+</body>
+</html>

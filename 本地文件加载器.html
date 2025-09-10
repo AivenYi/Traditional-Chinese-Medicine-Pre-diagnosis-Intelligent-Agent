@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地文件加载器 - 中医知识库</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .file-input-area {
+            border: 3px dashed #3498db;
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-area:hover {
+            border-color: #2980b9;
+            background: #e3f2fd;
+        }
+        
+        .file-input-area.dragover {
+            border-color: #27ae60;
+            background: #e8f5e8;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.3);
+        }
+        
+        .file-list {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .file-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .file-size {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 本地文件加载器</h1>
+        <p class="description">
+            选择您的本地中医图书文件，系统将自动处理编码问题并加载到知识库中。
+            支持 .txt 和 .pdf 格式文件。
+        </p>
+        
+        <div class="file-input-area" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">点击选择文件或拖拽文件到此处</div>
+            <div class="upload-hint">支持 .txt 和 .pdf 格式</div>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".txt,.pdf" multiple>
+        
+        <div class="file-list" id="fileList" style="display: none;">
+            <h3>已选择的文件：</h3>
+            <div id="fileItems"></div>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div style="margin-top: 30px;">
+            <button class="btn btn-success" onclick="loadToKnowledgeBase()" id="loadBtn" style="display: none;">
+                🚀 加载到知识库
+            </button>
+            <button class="btn" onclick="window.open('knowledge_base.html', '_blank')">
+                📖 打开知识库
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        
+        // 文件选择处理
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
+        
+        // 拖拽处理
+        const fileInputArea = document.querySelector('.file-input-area');
+        
+        fileInputArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            fileInputArea.classList.add('dragover');
+        });
+        
+        fileInputArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            fileInputArea.classList.remove('dragover');
+        });
+        
+        fileInputArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            fileInputArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFiles();
+            document.getElementById('loadBtn').style.display = 'inline-block';
+        }
+        
+        function displayFiles() {
+            const fileList = document.getElementById('fileList');
+            const fileItems = document.getElementById('fileItems');
+            
+            if (selectedFiles.length === 0) {
+                fileList.style.display = 'none';
+                return;
+            }
+            
+            fileList.style.display = 'block';
+            fileItems.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)} - ${getFileType(file.name)}</div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-small btn-danger" onclick="removeFile(${index})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles();
+            if (selectedFiles.length === 0) {
+                document.getElementById('loadBtn').style.display = 'none';
+            }
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function getFileType(filename) {
+            if (filename.toLowerCase().endsWith('.pdf')) return 'PDF文档';
+            if (filename.toLowerCase().endsWith('.txt')) return '文本文件';
+            return '未知格式';
+        }
+        
+        function loadToKnowledgeBase() {
+            if (selectedFiles.length === 0) {
+                showStatus('请先选择文件！', 'error');
+                return;
+            }
+            
+            // 将文件数据存储到localStorage
+            const booksData = [];
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let content = e.target.result;
+                    
+                    // 检查编码并尝试修复
+                    if (content.includes('') || content.includes('')) {
+                        const reader2 = new FileReader();
+                        reader2.onload = function(e2) {
+                            content = e2.target.result;
+                            processFile(file, content, booksData, index);
+                        };
+                        reader2.readAsText(file, 'GBK');
+                    } else {
+                        processFile(file, content, booksData, index);
+                    }
+                };
+                
+                if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                    reader.readAsText(file, 'UTF-8');
+                } else {
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        function processFile(file, content, booksData, index) {
+            const lines = content.split('\n');
+            const title = lines[0] || file.name.replace(/\.(txt|pdf)$/i, '');
+            const author = lines[1] || '未知作者';
+            
+            // 根据文件名判断分类
+            let category = 'theory';
+            if (file.name.includes('本草') || file.name.includes('纲目')) {
+                category = 'herbal';
+            } else if (file.name.includes('内经') || file.name.includes('素问') || file.name.includes('灵枢')) {
+                category = 'classic';
+            } else if (file.name.includes('针灸') || file.name.includes('针法')) {
+                category = 'acupuncture';
+            } else if (file.name.includes('临床') || file.name.includes('医案')) {
+                category = 'clinical';
+            }
+            
+            const bookData = {
+                id: Date.now() + Math.random() + index,
+                title: title,
+                author: author,
+                category: category,
+                description: file.type === 'application/pdf' ? '用户加载的PDF图书' : '用户加载的文本图书',
+                content: content,
+                uploadDate: new Date().toISOString(),
+                type: file.type === 'application/pdf' ? 'pdf' : 'text',
+                fileName: file.name,
+                fileSize: file.size
+            };
+            
+            booksData.push(bookData);
+            
+            // 当所有文件处理完成时
+            if (booksData.length === selectedFiles.length) {
+                // 存储到localStorage
+                const existingBooks = JSON.parse(localStorage.getItem('userBooks') || '[]');
+                const allBooks = [...existingBooks, ...booksData];
+                localStorage.setItem('userBooks', JSON.stringify(allBooks));
+                
+                showStatus(`成功加载 ${booksData.length} 本图书到知识库！`, 'success');
+                
+                // 清空选择
+                selectedFiles = [];
+                displayFiles();
+                document.getElementById('loadBtn').style.display = 'none';
+                document.getElementById('fileInput').value = '';
+            }
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            
+            setTimeout(() => {
+                status.textContent = '';
+                status.className = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

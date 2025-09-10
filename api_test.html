@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试页面</title>
+    <script src="api_config.js"></script>
+    <script src="medical_prompts.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056cc;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            background: #ffe6e6;
+            color: #d00;
+        }
+        .success {
+            background: #e6ffe6;
+            color: #060;
+        }
+    </style>
+</head>
+<body>
+    <h1>API测试页面</h1>
+    
+    <div class="test-section">
+        <h2>1. 检查API配置</h2>
+        <button onclick="checkConfig()">检查配置</button>
+        <div id="configResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 测试图片分析API</h2>
+        <button onclick="testImageAPI()">测试图片分析API</button>
+        <div id="apiResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 测试简化请求</h2>
+        <button onclick="testSimpleAPI()">测试简化请求</button>
+        <div id="simpleResult" class="result"></div>
+    </div>
+
+    <script>
+        const imageAnalysisConfig = getApiConfig('IMAGE_ANALYSIS');
+        const testImageUrl = 'https://p9-bot-workflow-sign.byteimg.com/tos-cn-i-mdko3gqilj/9ab41a714790431a948e26fe5cd46819.png~tplv-mdko3gqilj-image.png?rk3s=c8fe7ad5&x-expires=1788537229&x-signature=S%2FEbvTV4JhYPw769c%2Bz10AUirG8%3D';
+        
+        function checkConfig() {
+            const result = document.getElementById('configResult');
+            result.innerHTML = `API配置信息：
+API URL: ${imageAnalysisConfig.API_URL}
+API KEY: ${imageAnalysisConfig.API_KEY ? imageAnalysisConfig.API_KEY.substring(0, 10) + '...' : '未配置'}
+MODEL: ${imageAnalysisConfig.MODEL}`;
+        }
+        
+        async function testImageAPI() {
+            const result = document.getElementById('apiResult');
+            result.innerHTML = '正在测试...';
+            result.className = 'result';
+            
+            try {
+                const requestBody = {
+                    "model": imageAnalysisConfig.MODEL,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": testImageUrl
+                                    }
+                                },
+                                {
+                                    "type": "text",
+                                    "text": getMedicalPrompt('comprehensive')
+                                }
+                            ]
+                        }
+                    ],
+                    "stream": false
+                };
+                
+                console.log('请求体:', JSON.stringify(requestBody, null, 2));
+                
+                const response = await fetch(imageAnalysisConfig.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${imageAnalysisConfig.API_KEY}`,
+                        'X-API-Key': imageAnalysisConfig.API_KEY
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('响应状态:', response.status);
+                console.log('响应头:', response.headers);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                result.innerHTML = `API调用成功！
+响应数据: ${JSON.stringify(data, null, 2)}`;
+                result.className = 'result success';
+                
+            } catch (error) {
+                result.innerHTML = `API调用失败: ${error.message}`;
+                result.className = 'result error';
+                console.error('API测试错误:', error);
+            }
+        }
+        
+        async function testSimpleAPI() {
+            const result = document.getElementById('simpleResult');
+            result.innerHTML = '正在测试简化请求...';
+            result.className = 'result';
+            
+            try {
+                const requestBody = {
+                    "model": imageAnalysisConfig.MODEL,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "你好，这是一个测试消息"
+                        }
+                    ]
+                };
+                
+                const response = await fetch(imageAnalysisConfig.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${imageAnalysisConfig.API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                result.innerHTML = `简化请求成功！
+响应数据: ${JSON.stringify(data, null, 2)}`;
+                result.className = 'result success';
+                
+            } catch (error) {
+                result.innerHTML = `简化请求失败: ${error.message}`;
+                result.className = 'result error';
+                console.error('简化请求错误:', error);
+            }
+        }
+    </script>
+</body>
+</html>

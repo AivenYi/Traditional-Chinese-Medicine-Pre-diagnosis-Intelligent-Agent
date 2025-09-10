@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试页面 - 获取预诊分析功能</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="api_config.js"></script>
+    <script src="medical_prompts.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056cc;
+        }
+        .chat-container {
+            border: 1px solid #ddd;
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        .bot-message {
+            background: #e0e0e0;
+            align-self: flex-start;
+        }
+        .user-message {
+            background: #007aff;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .chat-image {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 调试页面 - 获取预诊分析功能</h1>
+        
+        <div class="test-section">
+            <h3>📋 测试步骤</h3>
+            <p>1. 点击"添加测试图片消息"按钮，模拟AI生成图片</p>
+            <p>2. 点击"获取预诊分析"按钮，测试分析功能</p>
+            <p>3. 查看控制台日志和下方日志区域</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎮 测试控制</h3>
+            <button onclick="addTestImageMessage()">添加测试图片消息</button>
+            <button onclick="testGetAnalysis()">获取预诊分析</button>
+            <button onclick="clearChat()">清空聊天</button>
+            <button onclick="clearLog()">清空日志</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>💬 聊天区域</h3>
+            <div class="chat-container" id="chatContainer">
+                <div class="message bot-message">
+                    欢迎使用调试页面！请先添加测试图片消息，然后测试分析功能。
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 控制台日志</h3>
+            <div class="log" id="logContainer">
+                等待操作...
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 医学分析结果</h3>
+            <div id="medicalAnalysisResult" style="display: none;">
+                <h4>分析结果：</h4>
+                <div id="medicalAnalysisContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 从配置文件获取API配置
+        const cozeConfig = getApiConfig('COZE');
+        const imageAnalysisConfig = getApiConfig('IMAGE_ANALYSIS');
+        
+        // 测试图片URL
+        const TEST_IMAGE_URL = 'https://p9-bot-workflow-sign.byteimg.com/tos-cn-i-mdko3gqilj/9ab41a714790431a948e26fe5cd46819.png~tplv-mdko3gqilj-image.png?rk3s=c8fe7ad5&x-expires=1788537229&x-signature=S%2FEbvTV4JhYPw769c%2Bz10AUirG8%3D';
+        
+        // 日志函数
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}<br>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+        
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '日志已清空...<br>';
+        }
+        
+        // 添加测试图片消息
+        function addTestImageMessage() {
+            log('添加测试图片消息');
+            addMessage('AI为您生成了以下图片：', 'bot');
+            addMessage(TEST_IMAGE_URL, 'bot');
+            log('测试图片消息已添加');
+        }
+        
+        // 添加消息到聊天窗口
+        function addMessage(text, sender) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            
+            // 检查是否包含图片链接
+            if (sender === 'bot' && text.includes('https://') && (text.includes('.png') || text.includes('.jpg') || text.includes('.jpeg') || text.includes('.gif'))) {
+                // 如果是图片链接，直接显示图片
+                const img = document.createElement('img');
+                img.src = text;
+                img.classList.add('chat-image');
+                img.alt = 'AI生成的图片';
+                img.title = '点击放大图片';
+                
+                messageDiv.textContent = 'AI为您生成了以下图片：';
+                messageDiv.appendChild(img);
+            } else {
+                // 普通文本消息
+                messageDiv.textContent = text;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return messageDiv;
+        }
+        
+        // 获取最后一条包含图片的机器人消息
+        function getLastBotMessageWithImage() {
+            const chatContainer = document.getElementById('chatContainer');
+            const botMessages = chatContainer.querySelectorAll('.bot-message');
+            log(`找到的机器人消息数量: ${botMessages.length}`);
+            
+            for (let i = botMessages.length - 1; i >= 0; i--) {
+                const message = botMessages[i];
+                const img = message.querySelector('img');
+                log(`检查消息 ${i}: ${message.textContent.substring(0, 50)}... 包含图片: ${!!img}`);
+                if (img && img.src) {
+                    log(`找到图片URL: ${img.src}`);
+                    return img.src;
+                }
+            }
+            log('没有找到包含图片的机器人消息');
+            return null;
+        }
+        
+        // 调用图片分析API的函数
+        async function callImageAnalysisAPI(imageUrl) {
+            try {
+                log(`开始调用图片分析API，图片URL: ${imageUrl}`);
+                
+                const response = await fetch(imageAnalysisConfig.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${imageAnalysisConfig.API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        "model": imageAnalysisConfig.MODEL,
+                        "messages": [
+                            {
+                                "content": [
+                                    {
+                                        "image_url": {
+                                            "url": imageUrl
+                                        },
+                                        "type": "image_url"
+                                    },
+                                    {
+                                        "text": getMedicalPrompt('comprehensive'),
+                                        "type": "text"
+                                    }
+                                ],
+                                "role": "user"
+                            }
+                        ]
+                    })
+                });
+                
+                log(`图片分析API响应状态: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                log(`图片分析API返回数据: ${JSON.stringify(data).substring(0, 200)}...`);
+                
+                return data;
+            } catch (error) {
+                log(`调用图片分析API失败: ${error.message}`);
+                throw error;
+            }
+        }
+        
+        // 执行医学分析
+        async function performMedicalAnalysis(imageUrl) {
+            log('开始执行医学分析');
+            
+            // 检查API密钥是否已配置
+            if (!checkApiKey('IMAGE_ANALYSIS')) {
+                log('API密钥未配置');
+                const medicalAnalysisResult = document.getElementById('medicalAnalysisResult');
+                const medicalAnalysisContent = document.getElementById('medicalAnalysisContent');
+                
+                medicalAnalysisResult.style.display = 'block';
+                medicalAnalysisContent.innerHTML = `
+                    <div style="color: #ffc107; padding: 20px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
+                        <h3>API密钥未配置</h3>
+                        <p>请先在 api_config.js 文件中配置您的图片分析API密钥</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const medicalAnalysisResult = document.getElementById('medicalAnalysisResult');
+            const medicalAnalysisContent = document.getElementById('medicalAnalysisContent');
+            
+            // 显示分析区域和加载状态
+            medicalAnalysisResult.style.display = 'block';
+            medicalAnalysisContent.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在分析图片，请稍候...</p>
+                </div>
+            `;
+            
+            try {
+                log(`开始执行医学分析，图片URL: ${imageUrl}`);
+                
+                const analysisResult = await callImageAnalysisAPI(imageUrl);
+                
+                log(`医学分析结果: ${JSON.stringify(analysisResult).substring(0, 200)}...`);
+                
+                // 处理分析结果
+                if (analysisResult && analysisResult.choices && analysisResult.choices[0]) {
+                    const content = analysisResult.choices[0].message.content;
+                    medicalAnalysisContent.innerHTML = formatMedicalAnalysis(content);
+                    log('医学分析完成');
+                } else {
+                    medicalAnalysisContent.innerHTML = `
+                        <div style="text-align: center; color: #dc3545; padding: 20px;">
+                            <p>分析失败，API返回格式异常</p>
+                        </div>
+                    `;
+                    log('分析失败，API返回格式异常');
+                }
+            } catch (error) {
+                log(`医学分析详细错误: ${error.message}`);
+                medicalAnalysisContent.innerHTML = `
+                    <div style="text-align: center; color: #dc3545; padding: 20px;">
+                        <p>分析过程中发生错误: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 格式化医学分析内容
+        function formatMedicalAnalysis(content) {
+            // 将Markdown格式转换为HTML
+            let formattedContent = content
+                .replace(/## (.*?)/g, '<h2>$1</h2>')
+                .replace(/### (.*?)/g, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // 处理列表
+            formattedContent = formattedContent.replace(/- (.*?)(<br>|$)/g, '<li>$1</li>');
+            formattedContent = formattedContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            
+            return `<p>${formattedContent}</p>`;
+        }
+        
+        // 测试获取预诊分析功能
+        async function testGetAnalysis() {
+            log('测试获取预诊分析功能');
+            
+            // 检查是否有图片可以分析
+            const lastBotMessage = getLastBotMessageWithImage();
+            
+            if (lastBotMessage) {
+                log('找到图片，开始分析');
+                await performMedicalAnalysis(lastBotMessage);
+            } else {
+                log('没有找到图片，显示提示');
+                alert('请先添加测试图片消息');
+            }
+        }
+        
+        // 清空聊天
+        function clearChat() {
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.innerHTML = '<div class="message bot-message">欢迎使用调试页面！请先添加测试图片消息，然后测试分析功能。</div>';
+            document.getElementById('medicalAnalysisResult').style.display = 'none';
+            log('聊天已清空');
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('调试页面加载完成');
+            log(`API配置检查:`);
+            log(`- Coze API: ${checkApiKey('COZE') ? '已配置' : '未配置'}`);
+            log(`- 图片分析API: ${checkApiKey('IMAGE_ANALYSIS') ? '已配置' : '未配置'}`);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn i {
+            margin-right: 8px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 导航功能测试</h1>
+        <p>测试"中医知识库"按钮的跳转功能</p>
+        
+        <button class="btn" onclick="testNavigation()">
+            <i class="fas fa-book-medical"></i>
+            测试跳转到中医知识库
+        </button>
+        
+        <button class="btn" onclick="testDirectNavigation()">
+            <i class="fas fa-external-link-alt"></i>
+            直接打开知识库
+        </button>
+        
+        <div id="status"></div>
+        
+        <div style="margin-top: 30px; text-align: left;">
+            <h3>📋 测试说明：</h3>
+            <ul>
+                <li>点击第一个按钮测试JavaScript跳转功能</li>
+                <li>点击第二个按钮直接打开知识库页面</li>
+                <li>检查浏览器控制台是否有相关日志输出</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function testNavigation() {
+            const status = document.getElementById('status');
+            try {
+                console.log('测试：中医知识库按钮被点击');
+                // 模拟跳转到知识库页面
+                window.open('knowledge_base.html', '_blank');
+                status.innerHTML = `
+                    <div class="status success">
+                        ✅ 跳转功能测试成功！<br>
+                        知识库页面应该在新标签页中打开
+                    </div>
+                `;
+            } catch (error) {
+                status.innerHTML = `
+                    <div class="status error">
+                        ❌ 跳转功能测试失败：${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function testDirectNavigation() {
+            const status = document.getElementById('status');
+            try {
+                // 直接跳转（不打开新标签页）
+                window.location.href = 'knowledge_base.html';
+            } catch (error) {
+                status.innerHTML = `
+                    <div class="status error">
+                        ❌ 直接跳转失败：${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载完成后的提示
+        window.onload = function() {
+            console.log('导航测试页面加载完成');
+            document.getElementById('status').innerHTML = `
+                <div class="status success">
+                    📱 页面加载完成，可以开始测试导航功能
+                </div>
+            `;
+        };
+    </script>
+</body>
+</html>

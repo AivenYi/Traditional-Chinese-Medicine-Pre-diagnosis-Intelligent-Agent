@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中医知识库 - 电子图书管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1c1c1e;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 头部样式 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header h1 i {
+            color: #e74c3c;
+            font-size: 2.8rem;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        /* 主要内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            min-height: 600px;
+        }
+        
+        /* 侧边栏 */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+        
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sidebar h3 i {
+            color: #3498db;
+        }
+        
+        /* 上传区域 */
+        .upload-section {
+            margin-bottom: 25px;
+        }
+        
+        .upload-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .upload-btn i {
+            font-size: 1.2rem;
+        }
+        
+        /* 分类筛选 */
+        .category-filter {
+            margin-bottom: 25px;
+        }
+        
+        .category-list {
+            list-style: none;
+        }
+        
+        .category-item {
+            margin-bottom: 8px;
+        }
+        
+        .category-btn {
+            width: 100%;
+            padding: 12px 15px;
+            background: transparent;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+        
+        .category-btn:hover,
+        .category-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        /* 搜索框 */
+        .search-section {
+            margin-bottom: 25px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        /* 图书网格 */
+        .books-grid {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .books-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .books-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .books-count {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .books-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        /* 图书卡片 */
+        .book-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border-color: #3498db;
+        }
+        
+        .book-cover {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        
+        .book-cover i {
+            font-size: 3rem;
+            color: #bdc3c7;
+        }
+        
+        .book-info h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+        
+        .book-meta {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+        
+        .book-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .read-btn {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .read-btn:hover {
+            background: #229954;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        
+        /* 阅读器模态框 */
+        .reader-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .reader-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .reader-container {
+            width: 90%;
+            height: 90%;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .reader-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .reader-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .reader-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .reader-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .reader-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .reader-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        
+        .reader-content h1,
+        .reader-content h2,
+        .reader-content h3 {
+            color: #2c3e50;
+            margin: 20px 0 10px 0;
+        }
+        
+        .reader-content p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            font-size: 1rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .books-grid {
+                order: 1;
+            }
+            
+            .books-container {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .reader-container {
+                width: 95%;
+                height: 95%;
+            }
+        }
+        
+        /* 文件上传隐藏 */
+        #fileInput {
+            display: none;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-book-medical"></i>
+                中医知识库
+            </h1>
+            <p>传承千年智慧，汇聚经典医书，构建专业中医知识体系</p>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; font-size: 0.9rem; color: #2c3e50;">
+                <i class="fas fa-info-circle"></i>
+                <strong>使用提示：</strong> 
+                <a href="本地文件加载器.html" target="_blank" style="color: #3498db; text-decoration: none; font-weight: 600;">📁 使用本地文件加载器</a> 
+                或通过"添加新图书"按钮上传文件
+            </div>
+        </div>
+        
+        <!-- 主要内容 -->
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <!-- 上传区域 -->
+                <div class="upload-section">
+                    <h3><i class="fas fa-upload"></i> 上传图书</h3>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-plus"></i>
+                        添加新图书
+                    </button>
+                    <button class="upload-btn" onclick="loadPresetBooks()" style="margin-top: 10px; background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+                        <i class="fas fa-folder-open"></i>
+                        加载预设图书
+                    </button>
+                    <input type="file" id="fileInput" accept=".txt,.pdf" multiple>
+                </div>
+                
+                <!-- 分类筛选 -->
+                <div class="category-filter">
+                    <h3><i class="fas fa-filter"></i> 图书分类</h3>
+                    <ul class="category-list">
+                        <li class="category-item">
+                            <button class="category-btn active" data-category="all">
+                                <i class="fas fa-th-large"></i> 全部图书
+                            </button>
+                        </li>
+                        <li class="category-item">
+                            <button class="category-btn" data-category="classic">
+                                <i class="fas fa-scroll"></i> 经典古籍
+                            </button>
+                        </li>
+                        <li class="category-item">
+                            <button class="category-btn" data-category="theory">
+                                <i class="fas fa-brain"></i> 理论著作
+                            </button>
+                        </li>
+                        <li class="category-item">
+                            <button class="category-btn" data-category="clinical">
+                                <i class="fas fa-stethoscope"></i> 临床医学
+                            </button>
+                        </li>
+                        <li class="category-item">
+                            <button class="category-btn" data-category="herbal">
+                                <i class="fas fa-leaf"></i> 本草学
+                            </button>
+                        </li>
+                        <li class="category-item">
+                            <button class="category-btn" data-category="acupuncture">
+                                <i class="fas fa-crosshairs"></i> 针灸学
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 搜索框 -->
+                <div class="search-section">
+                    <h3><i class="fas fa-search"></i> 搜索图书</h3>
+                    <input type="text" class="search-input" id="searchInput" placeholder="输入书名或作者...">
+                </div>
+            </div>
+            
+            <!-- 图书网格 -->
+            <div class="books-grid">
+                <div class="books-header">
+                    <div class="books-title">
+                        <i class="fas fa-books"></i>
+                        图书列表
+                    </div>
+                    <div class="books-count" id="booksCount">共 0 本图书</div>
+                </div>
+                
+                <div class="books-container" id="booksContainer">
+                    <!-- 图书卡片将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 阅读器模态框 -->
+    <div class="reader-modal" id="readerModal">
+        <div class="reader-container">
+            <div class="reader-header">
+                <div class="reader-title" id="readerTitle">图书阅读器</div>
+                <div class="reader-controls">
+                    <button class="reader-btn" id="fontSizeBtn">
+                        <i class="fas fa-text-height"></i> 字体
+                    </button>
+                    <button class="reader-btn" id="themeBtn">
+                        <i class="fas fa-moon"></i> 主题
+                    </button>
+                    <button class="reader-btn" id="closeReader">
+                        <i class="fas fa-times"></i> 关闭
+                    </button>
+                </div>
+            </div>
+            <div class="reader-content" id="readerContent">
+                <!-- 图书内容将在这里显示 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知 -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // 图书数据存储
+        let books = [];
+        let filteredBooks = [];
+        let currentCategory = 'all';
+        let currentTheme = 'light';
+        let currentFontSize = 'medium';
+        
+        // 预置一些示例图书
+        const sampleBooks = [
+            {
+                id: 1,
+                title: '黄帝内经（素问灵枢）原文白话完整版',
+                author: '佚名',
+                category: 'classic',
+                description: '中医理论奠基之作，包含《素问》和《灵枢》两部分',
+                content: '',
+                uploadDate: new Date().toISOString(),
+                type: 'pdf',
+                filePath: './图书/黄帝内经（素问灵枢）原文白话完整版(1).pdf'
+            },
+            {
+                id: 2,
+                title: '013-本草纲目',
+                author: '李时珍',
+                category: 'herbal',
+                description: '明代李时珍编著的药物学巨著，收录药物1892种',
+                content: '',
+                uploadDate: new Date().toISOString(),
+                type: 'text',
+                filePath: './图书/013-本草纲目.txt'
+            }
+        ];
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载示例图书
+            books = [...sampleBooks];
+            
+            // 从localStorage加载用户上传的图书
+            loadUserBooks();
+            
+            filteredBooks = [...books];
+            
+            // 尝试加载本地图书文件
+            loadLocalBooks();
+            
+            // 渲染图书列表
+            renderBooks();
+            updateBooksCount();
+            
+            // 绑定事件
+            bindEvents();
+        });
+        
+        // 从localStorage加载用户图书
+        function loadUserBooks() {
+            try {
+                const userBooks = JSON.parse(localStorage.getItem('userBooks') || '[]');
+                if (userBooks.length > 0) {
+                    // 将用户图书添加到现有图书列表的开头
+                    books = [...userBooks, ...books];
+                    showNotification(`已加载 ${userBooks.length} 本用户图书！`, 'success');
+                }
+            } catch (error) {
+                console.log('无法加载用户图书:', error);
+            }
+        }
+        
+        // 保存用户图书到localStorage
+        function saveUserBooks() {
+            try {
+                // 只保存用户上传的图书（不包含预设图书）
+                const userBooks = books.filter(book => !book.filePath);
+                localStorage.setItem('userBooks', JSON.stringify(userBooks));
+            } catch (error) {
+                console.log('无法保存用户图书:', error);
+            }
+        }
+        
+        // 加载本地图书文件
+        async function loadLocalBooks() {
+            try {
+                // 为预设图书加载实际文件内容
+                for (let book of books) {
+                    if (book.filePath) {
+                        try {
+                            const response = await fetch(book.filePath);
+                            if (response.ok) {
+                                if (book.type === 'text') {
+                                    // 加载TXT文件内容，尝试多种编码
+                                    const arrayBuffer = await response.arrayBuffer();
+                                    let content = '';
+                                    
+                                    // 尝试UTF-8编码
+                                    try {
+                                        const decoder = new TextDecoder('utf-8');
+                                        content = decoder.decode(arrayBuffer);
+                                        // 检查是否包含乱码字符
+                                        if (content.includes('') || content.includes('')) {
+                                            throw new Error('UTF-8解码失败');
+                                        }
+                                    } catch (utf8Error) {
+                                        // 尝试GBK编码（通过GB2312近似）
+                                        try {
+                                            const decoder = new TextDecoder('gb2312');
+                                            content = decoder.decode(arrayBuffer);
+                                        } catch (gbkError) {
+                                            // 最后尝试latin1编码
+                                            const decoder = new TextDecoder('latin1');
+                                            content = decoder.decode(arrayBuffer);
+                                        }
+                                    }
+                                    
+                                    book.content = content;
+                                    
+                                    // 尝试从内容中提取标题和作者
+                                    const lines = content.split('\n');
+                                    if (lines.length > 0 && lines[0].trim()) {
+                                        book.title = lines[0].trim();
+                                    }
+                                    if (lines.length > 1 && lines[1].trim()) {
+                                        book.author = lines[1].trim();
+                                    }
+                                } else if (book.type === 'pdf') {
+                                    // 加载PDF文件
+                                    const blob = await response.blob();
+                                    book.file = new File([blob], book.filePath.split('/').pop(), { type: 'application/pdf' });
+                                }
+                            } else {
+                                console.log(`文件响应错误: ${response.status} - ${book.filePath}`);
+                                // 为TXT文件添加示例内容
+                                if (book.type === 'text') {
+                                    book.content = `由于浏览器安全限制，无法直接加载本地文件。
+
+请通过以下方式查看完整内容：
+1. 点击"添加新图书"按钮
+2. 选择并上传"${book.title}"文件
+3. 上传后即可正常阅读
+
+或者：
+1. 使用本地HTTP服务器运行此页面
+2. 将文件放在Web服务器目录下
+
+这是《${book.title}》的简介：
+${book.description}
+
+作者：${book.author}
+分类：${getCategoryName(book.category)}`;
+                                }
+                            }
+                        } catch (fileError) {
+                            console.log(`无法加载文件 ${book.filePath}:`, fileError);
+                            // 为TXT文件添加示例内容
+                            if (book.type === 'text') {
+                                book.content = `由于浏览器安全限制，无法直接加载本地文件。
+
+请通过以下方式查看完整内容：
+1. 点击"添加新图书"按钮
+2. 选择并上传"${book.title}"文件
+3. 上传后即可正常阅读
+
+或者：
+1. 使用本地HTTP服务器运行此页面
+2. 将文件放在Web服务器目录下
+
+这是《${book.title}》的简介：
+${book.description}
+
+作者：${book.author}
+分类：${getCategoryName(book.category)}`;
+                            }
+                        }
+                    }
+                }
+                
+                // 更新显示
+                filterBooks();
+                showNotification('本地图书文件加载完成！', 'success');
+                
+            } catch (error) {
+                console.log('无法加载本地图书文件，使用默认图书');
+            }
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 文件上传
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            
+            // 分类筛选
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category;
+                    filterBooks();
+                });
+            });
+            
+            // 搜索
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterBooks();
+            });
+            
+            // 阅读器控制
+            document.getElementById('closeReader').addEventListener('click', closeReader);
+            document.getElementById('fontSizeBtn').addEventListener('click', toggleFontSize);
+            document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+        }
+        
+        // 处理文件上传
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            
+            for (let file of files) {
+                if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        let content = e.target.result;
+                        
+                        // 检查内容是否包含乱码，如果是则尝试其他编码
+                        if (content.includes('') || content.includes('')) {
+                            // 重新读取，尝试GBK编码
+                            const reader2 = new FileReader();
+                            reader2.onload = function(e2) {
+                                content = e2.target.result;
+                                processTextContent(content, file);
+                            };
+                            reader2.readAsText(file, 'GBK');
+                        } else {
+                            processTextContent(content, file);
+                        }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                    
+                    function processTextContent(content, file) {
+                        const lines = content.split('\n');
+                        const title = lines[0] || file.name.replace('.txt', '');
+                        const author = lines[1] || '未知作者';
+                        
+                        const newBook = {
+                            id: Date.now() + Math.random(),
+                            title: title,
+                            author: author,
+                            category: 'theory',
+                            description: '用户上传的图书',
+                            content: content,
+                            uploadDate: new Date().toISOString(),
+                            type: 'text',
+                            file: file
+                        };
+                        
+                        books.unshift(newBook);
+                        saveUserBooks();
+                        filterBooks();
+                        showNotification('图书上传成功！', 'success');
+                    }
+                } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                    const newBook = {
+                        id: Date.now() + Math.random(),
+                        title: file.name.replace('.pdf', ''),
+                        author: '未知作者',
+                        category: 'theory',
+                        description: '用户上传的PDF图书',
+                        content: '',
+                        uploadDate: new Date().toISOString(),
+                        type: 'pdf',
+                        file: file
+                    };
+                    
+                    books.unshift(newBook);
+                    saveUserBooks();
+                    filterBooks();
+                    showNotification('PDF图书上传成功！', 'success');
+                } else {
+                    showNotification('暂不支持该文件格式，请上传.txt或.pdf文件', 'error');
+                }
+            }
+            
+            // 清空文件输入
+            event.target.value = '';
+        }
+        
+        // 筛选图书
+        function filterBooks() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredBooks = books.filter(book => {
+                const matchesCategory = currentCategory === 'all' || book.category === currentCategory;
+                const matchesSearch = book.title.toLowerCase().includes(searchTerm) || 
+                                   book.author.toLowerCase().includes(searchTerm);
+                return matchesCategory && matchesSearch;
+            });
+            
+            renderBooks();
+            updateBooksCount();
+        }
+        
+        // 渲染图书列表
+        function renderBooks() {
+            const container = document.getElementById('booksContainer');
+            
+            if (filteredBooks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <h3>暂无图书</h3>
+                        <p>请上传一些中医经典图书开始阅读</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredBooks.map(book => `
+                <div class="book-card" data-book-id="${book.id}">
+                    <div class="book-cover">
+                        <i class="fas ${book.type === 'pdf' ? 'fa-file-pdf' : 'fa-book'}"></i>
+                        <div style="position: absolute; top: 5px; right: 5px; background: ${book.type === 'pdf' ? '#e74c3c' : '#27ae60'}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: bold;">
+                            ${book.type === 'pdf' ? 'PDF' : 'TXT'}
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <h4>${book.title}</h4>
+                        <div class="book-meta">作者：${book.author}</div>
+                        <div class="book-meta">分类：${getCategoryName(book.category)}</div>
+                        <div class="book-meta">上传时间：${formatDate(book.uploadDate)}</div>
+                    </div>
+                    <div class="book-actions">
+                        <button class="action-btn read-btn" onclick="openReader(${book.id})">
+                            <i class="fas fa-book-open"></i> 阅读
+                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteBook(${book.id})">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 更新图书数量
+        function updateBooksCount() {
+            document.getElementById('booksCount').textContent = `共 ${filteredBooks.length} 本图书`;
+        }
+        
+        // 获取分类名称
+        function getCategoryName(category) {
+            const categoryNames = {
+                'classic': '经典古籍',
+                'theory': '理论著作',
+                'clinical': '临床医学',
+                'herbal': '本草学',
+                'acupuncture': '针灸学'
+            };
+            return categoryNames[category] || '其他';
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN');
+        }
+        
+        // 打开阅读器
+        function openReader(bookId) {
+            const book = books.find(b => b.id === bookId);
+            if (!book) return;
+            
+            document.getElementById('readerTitle').textContent = book.title;
+            
+            if (book.type === 'pdf') {
+                openPDFReader(book);
+            } else {
+                document.getElementById('readerContent').innerHTML = formatBookContent(book.content);
+                document.getElementById('readerModal').classList.add('show');
+                // 应用当前主题和字体大小
+                applyReaderStyles();
+            }
+        }
+        
+        // 打开PDF阅读器
+        function openPDFReader(book) {
+            const readerContent = document.getElementById('readerContent');
+            readerContent.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading"></div><p>正在加载PDF...</p></div>';
+            document.getElementById('readerModal').classList.add('show');
+            
+            // 如果book.file存在，直接使用；否则从filePath加载
+            if (book.file) {
+                loadPDFFromFile(book.file);
+            } else if (book.filePath) {
+                fetch(book.filePath)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.blob();
+                        } else {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                    })
+                    .then(blob => {
+                        const file = new File([blob], book.filePath.split('/').pop(), { type: 'application/pdf' });
+                        loadPDFFromFile(file);
+                    })
+                    .catch(error => {
+                        readerContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #e74c3c;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                                <h3>PDF加载失败</h3>
+                                <p>无法加载PDF文件：${error.message}</p>
+                                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                                    <h4>解决方案：</h4>
+                                    <ol style="text-align: left; margin: 10px 0;">
+                                        <li>点击"添加新图书"按钮重新上传PDF文件</li>
+                                        <li>使用本地HTTP服务器运行此页面</li>
+                                        <li>检查文件路径是否正确</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        `;
+                    });
+            } else {
+                readerContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #e74c3c;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                        <h3>PDF文件不存在</h3>
+                        <p>无法找到PDF文件</p>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                            <h4>解决方案：</h4>
+                            <ol style="text-align: left; margin: 10px 0;">
+                                <li>点击"添加新图书"按钮重新上传PDF文件</li>
+                                <li>使用本地HTTP服务器运行此页面</li>
+                                <li>检查文件路径是否正确</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            function loadPDFFromFile(file) {
+                const fileReader = new FileReader();
+                fileReader.onload = function(e) {
+                    const typedArray = new Uint8Array(e.target.result);
+                    
+                    pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
+                        let pdfContent = '';
+                        
+                        // 渲染前几页作为预览
+                        const numPages = Math.min(pdf.numPages, 5);
+                        
+                        function renderPage(pageNum) {
+                            return pdf.getPage(pageNum).then(function(page) {
+                                const scale = 1.5;
+                                const viewport = page.getViewport({scale: scale});
+                                
+                                const canvas = document.createElement('canvas');
+                                const context = canvas.getContext('2d');
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
+                                
+                                const renderContext = {
+                                    canvasContext: context,
+                                    viewport: viewport
+                                };
+                                
+                                return page.render(renderContext).promise.then(function() {
+                                    return canvas.toDataURL();
+                                });
+                            });
+                        }
+                        
+                        // 渲染所有页面
+                        const renderPromises = [];
+                        for (let i = 1; i <= numPages; i++) {
+                            renderPromises.push(renderPage(i));
+                        }
+                        
+                        Promise.all(renderPromises).then(function(images) {
+                            pdfContent = images.map((img, index) => 
+                                `<div style="margin-bottom: 20px; text-align: center;">
+                                    <img src="${img}" style="max-width: 100%; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">第 ${index + 1} 页</p>
+                                </div>`
+                            ).join('');
+                            
+                            if (pdf.numPages > 5) {
+                                pdfContent += `<div style="text-align: center; padding: 20px; color: #666;">
+                                    <p>显示前5页预览，完整PDF共${pdf.numPages}页</p>
+                                    <p>建议下载完整PDF文件进行详细阅读</p>
+                                </div>`;
+                            }
+                            
+                            readerContent.innerHTML = pdfContent;
+                        });
+                    }).catch(function(error) {
+                        readerContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #e74c3c;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                                <h3>PDF加载失败</h3>
+                                <p>无法加载PDF文件，请检查文件是否损坏</p>
+                                <p style="font-size: 0.8rem; color: #999;">错误信息：${error.message}</p>
+                            </div>
+                        `;
+                    });
+                };
+                
+                fileReader.readAsArrayBuffer(file);
+            }
+        }
+        
+        // 关闭阅读器
+        function closeReader() {
+            document.getElementById('readerModal').classList.remove('show');
+        }
+        
+        // 格式化图书内容
+        function formatBookContent(content) {
+            return content
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>')
+                .replace(/^/, '<p>')
+                .replace(/$/, '</p>');
+        }
+        
+        // 切换字体大小
+        function toggleFontSize() {
+            const sizes = ['small', 'medium', 'large'];
+            const currentIndex = sizes.indexOf(currentFontSize);
+            const nextIndex = (currentIndex + 1) % sizes.length;
+            currentFontSize = sizes[nextIndex];
+            
+            const sizeMap = {
+                'small': '0.9rem',
+                'medium': '1rem',
+                'large': '1.1rem'
+            };
+            
+            document.getElementById('readerContent').style.fontSize = sizeMap[currentFontSize];
+        }
+        
+        // 切换主题
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyReaderStyles();
+        }
+        
+        // 应用阅读器样式
+        function applyReaderStyles() {
+            const content = document.getElementById('readerContent');
+            const container = document.querySelector('.reader-container');
+            
+            if (currentTheme === 'dark') {
+                container.style.background = '#2c3e50';
+                content.style.background = '#2c3e50';
+                content.style.color = '#ecf0f1';
+            } else {
+                container.style.background = 'white';
+                content.style.background = 'white';
+                content.style.color = '#2c3e50';
+            }
+        }
+        
+        // 删除图书
+        function deleteBook(bookId) {
+            if (confirm('确定要删除这本图书吗？')) {
+                books = books.filter(book => book.id !== bookId);
+                saveUserBooks();
+                filterBooks();
+                showNotification('图书删除成功！', 'success');
+            }
+        }
+        
+        // 加载预设图书
+        function loadPresetBooks() {
+            // 创建文件输入元素
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.txt,.pdf';
+            fileInput.multiple = true;
+            fileInput.style.display = 'none';
+            
+            fileInput.onchange = function(event) {
+                const files = event.target.files;
+                let loadedCount = 0;
+                
+                for (let file of files) {
+                    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            let content = e.target.result;
+                            
+                            // 检查编码并尝试修复
+                            if (content.includes('') || content.includes('')) {
+                                // 重新读取，尝试GBK编码
+                                const reader2 = new FileReader();
+                                reader2.onload = function(e2) {
+                                    content = e2.target.result;
+                                    addPresetBook(file, content, 'text');
+                                };
+                                reader2.readAsText(file, 'GBK');
+                            } else {
+                                addPresetBook(file, content, 'text');
+                            }
+                        };
+                        reader.readAsText(file, 'UTF-8');
+                    } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                        addPresetBook(file, '', 'pdf');
+                    }
+                }
+                
+                function addPresetBook(file, content, type) {
+                    const lines = content.split('\n');
+                    const title = lines[0] || file.name.replace(/\.(txt|pdf)$/i, '');
+                    const author = lines[1] || '未知作者';
+                    
+                    // 根据文件名判断分类
+                    let category = 'theory';
+                    if (file.name.includes('本草') || file.name.includes('纲目')) {
+                        category = 'herbal';
+                    } else if (file.name.includes('内经') || file.name.includes('素问') || file.name.includes('灵枢')) {
+                        category = 'classic';
+                    } else if (file.name.includes('针灸') || file.name.includes('针法')) {
+                        category = 'acupuncture';
+                    } else if (file.name.includes('临床') || file.name.includes('医案')) {
+                        category = 'clinical';
+                    }
+                    
+                    const newBook = {
+                        id: Date.now() + Math.random(),
+                        title: title,
+                        author: author,
+                        category: category,
+                        description: type === 'pdf' ? '用户加载的PDF图书' : '用户加载的文本图书',
+                        content: content,
+                        uploadDate: new Date().toISOString(),
+                        type: type,
+                        file: file
+                    };
+                    
+                    // 检查是否已存在相同标题的图书
+                    const existingBook = books.find(b => b.title === newBook.title);
+                    if (existingBook) {
+                        // 更新现有图书
+                        Object.assign(existingBook, newBook);
+                    } else {
+                        // 添加新图书
+                        books.unshift(newBook);
+                    }
+                    
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        saveUserBooks();
+                        filterBooks();
+                        showNotification(`成功加载 ${loadedCount} 本预设图书！`, 'success');
+                    }
+                }
+            };
+            
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            document.body.removeChild(fileInput);
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 点击模态框外部关闭
+        document.getElementById('readerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReader();
+            }
+        });
+        
+        // ESC键关闭阅读器
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeReader();
+            }
+        });
+    </script>
+</body>
+</html>

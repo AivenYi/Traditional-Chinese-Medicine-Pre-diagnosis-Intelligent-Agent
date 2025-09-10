@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>图片分析API测试工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="api_config.js"></script>
+    <script src="medical_prompts.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1c1c1e;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        /* 主容器 */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 应用内容样式 */
+        .container {
+            padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #1c1c1e;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: #dc3545;
+            text-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        /* 测试图片展示区域 */
+        .test-image-container {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .test-image-title {
+            color: #007aff;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+        }
+        
+        .test-image-title i {
+            font-size: 20px;
+        }
+        
+        .test-image {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+        }
+        
+        .test-image:hover {
+            transform: scale(1.02);
+        }
+        
+        .image-url {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #495057;
+            word-break: break-all;
+        }
+        
+        /* 测试按钮区域 */
+        .test-controls {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 16px 32px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+        
+        .test-button:active {
+            transform: translateY(0);
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* 医学诊断分析结果区域 */
+        .medical-analysis-result {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .medical-analysis-title {
+            color: #dc3545;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+        }
+        
+        .medical-analysis-title i {
+            font-size: 22px;
+        }
+        
+        .medical-analysis-content {
+            line-height: 1.8;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        .medical-analysis-content h2 {
+            color: #dc3545;
+            font-size: 18px;
+            margin: 20px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .medical-analysis-content h3 {
+            color: #495057;
+            font-size: 16px;
+            margin: 16px 0 8px 0;
+        }
+        
+        .medical-analysis-content ul {
+            margin: 12px 0;
+            padding-left: 25px;
+        }
+        
+        .medical-analysis-content li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        .medical-analysis-content strong {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .analysis-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .analysis-loading i {
+            font-size: 24px;
+            color: #dc3545;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 状态信息 */
+        .status-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #1976d2;
+        }
+        
+        .status-info.success {
+            background: #e8f5e8;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+        
+        .status-info.error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+        
+        /* 图片放大功能 */
+        .image-zoom-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .image-zoom-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .image-zoom-container {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-zoom-img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: zoom-out;
+        }
+        
+        .image-zoom-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+        
+        .image-zoom-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .app-container {
+                border-radius: 15px;
+                min-height: calc(100vh - 20px);
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .test-button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="container">
+            <header>
+                <div class="logo">
+                    <i class="fas fa-flask"></i>图片分析API测试工具
+                </div>
+                <div class="subtitle">测试医学图片分析API的功能和性能</div>
+            </header>
+            
+            <div class="main-content">
+                <!-- 状态信息 -->
+                <div class="status-info" id="statusInfo">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>测试准备就绪</strong> - 点击下方按钮开始测试图片分析API
+                </div>
+                
+                <!-- 测试图片展示 -->
+                <div class="test-image-container">
+                    <div class="test-image-title">
+                        <i class="fas fa-image"></i> 测试图片
+                    </div>
+                    <img src="https://p9-bot-workflow-sign.byteimg.com/tos-cn-i-mdko3gqilj/9ab41a714790431a948e26fe5cd46819.png~tplv-mdko3gqilj-image.png?rk3s=c8fe7ad5&x-expires=1788537229&x-signature=S%2FEbvTV4JhYPw769c%2Bz10AUirG8%3D" 
+                         alt="测试图片" 
+                         class="test-image" 
+                         id="testImage"
+                         onclick="showImageZoom(this.src)">
+                    <div class="image-url">
+                        <strong>图片URL:</strong><br>
+                        https://p9-bot-workflow-sign.byteimg.com/tos-cn-i-mdko3gqilj/9ab41a714790431a948e26fe5cd46819.png~tplv-mdko3gqilj-image.png?rk3s=c8fe7ad5&x-expires=1788537229&x-signature=S%2FEbvTV4JhYPw769c%2Bz10AUirG8%3D
+                    </div>
+                </div>
+                
+                <!-- 测试控制按钮 -->
+                <div class="test-controls">
+                    <button class="test-button" id="testButton" onclick="startTest()">
+                        <i class="fas fa-play"></i>
+                        开始测试图片分析API
+                    </button>
+                </div>
+                
+                <!-- 医学诊断分析结果区域 -->
+                <div class="medical-analysis-result" id="medicalAnalysisResult">
+                    <div class="medical-analysis-title">
+                        <i class="fas fa-user-md"></i> 医学诊断分析结果
+                    </div>
+                    <div class="medical-analysis-content" id="medicalAnalysisContent">
+                        <!-- 医学分析内容将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 图片放大覆盖层 -->
+    <div class="image-zoom-overlay" id="imageZoomOverlay">
+        <div class="image-zoom-container">
+            <button class="image-zoom-close" id="imageZoomClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <img class="image-zoom-img" id="imageZoomImg" src="" alt="放大图片">
+        </div>
+    </div>
+
+    <script>
+        // 从配置文件获取API配置
+        const cozeConfig = getApiConfig('COZE');
+        const imageAnalysisConfig = getApiConfig('IMAGE_ANALYSIS');
+        
+        // 测试图片URL
+        const TEST_IMAGE_URL = 'https://p9-bot-workflow-sign.byteimg.com/tos-cn-i-mdko3gqilj/9ab41a714790431a948e26fe5cd46819.png~tplv-mdko3gqilj-image.png?rk3s=c8fe7ad5&x-expires=1788537229&x-signature=S%2FEbvTV4JhYPw769c%2Bz10AUirG8%3D';
+        
+        // 调用图片分析API的函数
+        async function callImageAnalysisAPI(imageUrl) {
+            try {
+                console.log('开始调用图片分析API，图片URL:', imageUrl);
+                
+                const response = await fetch(imageAnalysisConfig.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${imageAnalysisConfig.API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        "model": imageAnalysisConfig.MODEL,
+                        "messages": [
+                            {
+                                "content": [
+                                    {
+                                        "image_url": {
+                                            "url": imageUrl
+                                        },
+                                        "type": "image_url"
+                                    },
+                                    {
+                                        "text": getMedicalPrompt('comprehensive'),
+                                        "type": "text"
+                                    }
+                                ],
+                                "role": "user"
+                            }
+                        ]
+                    })
+                });
+                
+                console.log('图片分析API响应状态:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('图片分析API返回数据:', data);
+                
+                return data;
+            } catch (error) {
+                console.error('调用图片分析API失败:', error);
+                throw error;
+            }
+        }
+        
+        // 执行医学分析
+        async function performMedicalAnalysis(imageUrl) {
+            const medicalAnalysisResult = document.getElementById('medicalAnalysisResult');
+            const medicalAnalysisContent = document.getElementById('medicalAnalysisContent');
+            const testButton = document.getElementById('testButton');
+            const statusInfo = document.getElementById('statusInfo');
+            
+            // 检查API密钥是否已配置
+            if (!checkApiKey('IMAGE_ANALYSIS')) {
+                medicalAnalysisResult.style.display = 'block';
+                medicalAnalysisContent.innerHTML = `
+                    <div style="text-align: center; color: #ffc107; padding: 20px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <h3 style="color: #856404; margin-bottom: 10px;">API密钥未配置</h3>
+                        <p style="color: #856404; margin-bottom: 15px;">请先在 api_config.js 文件中配置您的图片分析API密钥</p>
+                        <div style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #495057;">
+                            IMAGE_ANALYSIS: {<br>
+                            &nbsp;&nbsp;API_KEY: 'your-api-key-here'<br>
+                            }
+                        </div>
+                    </div>
+                `;
+                medicalAnalysisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+            
+            // 显示分析区域和加载状态
+            medicalAnalysisResult.style.display = 'block';
+            medicalAnalysisContent.innerHTML = `
+                <div class="analysis-loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>正在分析图片，请稍候...</p>
+                </div>
+            `;
+            
+            // 更新状态信息
+            statusInfo.className = 'status-info';
+            statusInfo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <strong>正在分析中...</strong> - 请稍候，分析可能需要几秒钟时间';
+            
+            // 禁用测试按钮
+            testButton.disabled = true;
+            testButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 分析中...';
+            
+            // 滚动到分析区域
+            medicalAnalysisResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            try {
+                console.log('开始执行医学分析，图片URL:', imageUrl);
+                
+                const startTime = Date.now();
+                const analysisResult = await callImageAnalysisAPI(imageUrl);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                console.log('医学分析结果:', analysisResult);
+                console.log('分析耗时:', duration + 'ms');
+                
+                // 处理分析结果
+                if (analysisResult && analysisResult.choices && analysisResult.choices[0]) {
+                    const content = analysisResult.choices[0].message.content;
+                    medicalAnalysisContent.innerHTML = formatMedicalAnalysis(content);
+                    
+                    // 更新状态信息为成功
+                    statusInfo.className = 'status-info success';
+                    statusInfo.innerHTML = `<i class="fas fa-check-circle"></i> <strong>分析完成</strong> - 耗时 ${duration}ms，分析结果已显示`;
+                } else {
+                    medicalAnalysisContent.innerHTML = `
+                        <div style="text-align: center; color: #dc3545; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>分析失败，API返回格式异常</p>
+                        </div>
+                    `;
+                    
+                    // 更新状态信息为错误
+                    statusInfo.className = 'status-info error';
+                    statusInfo.innerHTML = '<i class="fas fa-times-circle"></i> <strong>分析失败</strong> - API返回格式异常';
+                }
+            } catch (error) {
+                console.error('医学分析详细错误:', error);
+                medicalAnalysisContent.innerHTML = `
+                    <div style="text-align: center; color: #dc3545; padding: 20px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>分析过程中发生错误: ${error.message}</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">请检查网络连接或稍后重试</p>
+                    </div>
+                `;
+                
+                // 更新状态信息为错误
+                statusInfo.className = 'status-info error';
+                statusInfo.innerHTML = `<i class="fas fa-times-circle"></i> <strong>分析失败</strong> - ${error.message}`;
+            } finally {
+                // 重新启用测试按钮
+                testButton.disabled = false;
+                testButton.innerHTML = '<i class="fas fa-redo"></i> 重新测试';
+            }
+        }
+        
+        // 格式化医学分析内容
+        function formatMedicalAnalysis(content) {
+            // 将Markdown格式转换为HTML
+            let formattedContent = content
+                .replace(/## (.*?)/g, '<h2>$1</h2>')
+                .replace(/### (.*?)/g, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // 处理列表
+            formattedContent = formattedContent.replace(/- (.*?)(<br>|$)/g, '<li>$1</li>');
+            formattedContent = formattedContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            
+            return `<p>${formattedContent}</p>`;
+        }
+        
+        // 开始测试
+        function startTest() {
+            console.log('开始测试图片分析API');
+            performMedicalAnalysis(TEST_IMAGE_URL);
+        }
+        
+        // 显示图片放大功能
+        function showImageZoom(imageSrc) {
+            const overlay = document.getElementById('imageZoomOverlay');
+            const img = document.getElementById('imageZoomImg');
+            const closeBtn = document.getElementById('imageZoomClose');
+            
+            img.src = imageSrc;
+            overlay.classList.add('show');
+            
+            // 点击关闭按钮关闭
+            closeBtn.addEventListener('click', hideImageZoom);
+            
+            // 点击图片或背景关闭
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay || e.target === img) {
+                    hideImageZoom();
+                }
+            });
+            
+            // ESC键关闭
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideImageZoom();
+                }
+            });
+        }
+        
+        // 隐藏图片放大功能
+        function hideImageZoom() {
+            const overlay = document.getElementById('imageZoomOverlay');
+            overlay.classList.remove('show');
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('测试页面加载完成');
+            console.log('API配置检查:');
+            console.log('- Coze API:', checkApiKey('COZE') ? '已配置' : '未配置');
+            console.log('- 图片分析API:', checkApiKey('IMAGE_ANALYSIS') ? '已配置' : '未配置');
+            
+            // 检查图片是否加载成功
+            const testImage = document.getElementById('testImage');
+            testImage.addEventListener('load', function() {
+                console.log('测试图片加载成功');
+            });
+            
+            testImage.addEventListener('error', function() {
+                console.error('测试图片加载失败');
+                const statusInfo = document.getElementById('statusInfo');
+                statusInfo.className = 'status-info error';
+                statusInfo.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>图片加载失败</strong> - 请检查图片URL是否有效';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提示词测试</title>
+    <script src="medical_prompts.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .prompt-preview {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 医学提示词测试</h1>
+        <p>测试 <code>medical_prompts.js</code> 中的提示词是否正确加载</p>
+        
+        <button class="btn" onclick="testPrompt()">测试 comprehensive 提示词</button>
+        <button class="btn" onclick="testFunction()">测试 getMedicalPrompt 函数</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function testPrompt() {
+            const result = document.getElementById('result');
+            try {
+                const prompt = getMedicalPrompt('comprehensive');
+                result.innerHTML = `
+                    <h3>✅ 提示词加载成功</h3>
+                    <div class="prompt-preview">${prompt}</div>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>❌ 提示词加载失败</h3>
+                    <p style="color: red;">错误: ${error.message}</p>
+                `;
+            }
+        }
+        
+        function testFunction() {
+            const result = document.getElementById('result');
+            try {
+                // 测试函数是否存在
+                if (typeof getMedicalPrompt === 'function') {
+                    const prompt = getMedicalPrompt('comprehensive');
+                    const promptLength = prompt.length;
+                    result.innerHTML = `
+                        <h3>✅ 函数测试成功</h3>
+                        <p><strong>函数类型:</strong> ${typeof getMedicalPrompt}</p>
+                        <p><strong>提示词长度:</strong> ${promptLength} 字符</p>
+                        <p><strong>提示词开头:</strong> ${prompt.substring(0, 100)}...</p>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <h3>❌ 函数不存在</h3>
+                        <p style="color: red;">getMedicalPrompt 函数未定义</p>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>❌ 函数测试失败</h3>
+                    <p style="color: red;">错误: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // 页面加载时自动测试
+        window.onload = function() {
+            console.log('页面加载完成，开始测试...');
+            testFunction();
+        };
+    </script>
+</body>
+</html>

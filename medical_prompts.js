@@ -5,7 +5,7 @@ const MEDICAL_ANALYSIS_PROMPTS = {
 
 **请严格按照以下要求进行输出：**
 - 使用Markdown格式进行回复
-- 对关键中医术语、重要建议、警示内容使用**加粗**或`<mark>`高亮标注`</mark>`，使重点内容醒目
+- 对关键中医术语、重要建议、警示内容使用**加粗**或<mark>高亮标注</mark>，使重点内容醒目
 - 保持内容的专业性、准确性和实用性，突出中医特色
 
 ## 📋 综合诊断分析
@@ -67,7 +67,7 @@ const MEDICAL_ANALYSIS_PROMPTS = {
 
 // 获取医学分析提示词
 function getMedicalPrompt(type = 'comprehensive') {
-    return MEDICAL_ANALYSIS_PROMPTS[type] || MEDICAL_ANALYSIS_PROMPTS.comprehensive_analysis;
+    return MEDICAL_ANALYSIS_PROMPTS[type] || MEDICAL_ANALYSIS_PROMPTS.comprehensive;
 }
 
 // 导出配置

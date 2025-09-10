@@ -770,7 +770,7 @@
                                         "type": "image_url"
                                     },
                                     {
-                                        "text": getMedicalPrompt('comprehensive'),
+                                        "text": (typeof getMedicalPrompt === 'function') ? getMedicalPrompt('comprehensive') : "请对提供的医学图片进行详细的诊断分析，包括症状分析、可能病因、治疗建议等。请使用专业的医学术语，并提供实用的健康建议。",
                                         "type": "text"
                                     }
                                 ],
